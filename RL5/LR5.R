@@ -1,3 +1,10 @@
+install.packages("gridExtra")
+install.packages("factoextra")
+install.packages("cluster")
+install.packages("parameters")
+install.packages("dendextend")
+install.packages("scatterplot3d") 
+
 library(tidyverse)
 library(ggplot2)
 library(psych)
@@ -120,13 +127,13 @@ wss_values <- map_dbl(k.values, wss)
 
 #МЕТОД ЛОКТЯ
 
-elbow_plot <- fviz_nbclust(numeric_data, kmeans, method = "wss", k.max = 15) + theme_minimal()
+elbow_plot <- fviz_nbclust(numeric_data, kmeans, method = "wss", k.max = 10) + theme_minimal()
 
 print(elbow_plot)
 
 #МЕТОД СИЛУЭТА
 
-silhouette_plot <- fviz_nbclust(numeric_data, kmeans, method = "silhouette", k.max = 15) + theme_minimal()
+silhouette_plot <- fviz_nbclust(numeric_data, kmeans, method = "silhouette", k.max = 10) + theme_minimal()
 
 print(silhouette_plot)
 
@@ -245,3 +252,57 @@ scatterplot3d(students_clustered$G1,
               zlab = "G3")
 legend("topright", legend = levels(students_clustered$cluster),
        col = 1:3, pch = 19)
+
+#ЛАБОРАТОРНАЯ РАБОТА 5.2
+
+install.packages("e1071")
+library(e1071)
+install.packages("party")
+library(party)
+install.packages("randomForest")
+library(randomForest)
+
+students_clustered$cluster <- as.factor(students_clustered$cluster)
+
+# Делим выборку на обучающую и тестовую
+set.seed(1234)
+ind <- sample(2, nrow(students_clustered), replace = TRUE, prob = c(0.7, 0.3))
+trainData <- students_clustered[ind == 1, ]
+testData <- students_clustered[ind == 2, ]
+
+# Обучение наивного байесовского классификатора
+model_nb <- naiveBayes(cluster ~ age + Medu + Fedu + traveltime + studytime + failures +
+                         famrel + freetime + goout + Dalc + Walc + health + absences + G1 + G2 + G3, 
+                       data = trainData)
+
+pred_nb <- predict(model_nb, newdata = testData)
+
+table(Факт = testData$cluster, Прогноз = pred_nb)
+
+acc_nb <- mean(pred_nb == testData$cluster)
+paste("Точность Байесовского классификатора:", round(100 * acc_nb, 2), "%")
+
+formula_tree <- cluster ~ age + Medu + Fedu + traveltime + studytime + failures +
+  famrel + freetime + goout + Dalc + Walc + health + absences + G1 + G2 + G3
+
+tree_model <- ctree(formula_tree, data = trainData)
+
+pred_tree <- predict(tree_model, newdata = testData)
+
+table(Факт = testData$cluster, Прогноз = pred_tree)
+acc_tree <- mean(pred_tree == testData$cluster)
+paste("Точность дерева решений:", round(100 * acc_tree, 2), "%")
+
+plot(tree_model)
+
+model_rf <- randomForest(formula_tree, data = trainData, ntree = 100)
+
+pred_rf <- predict(model_rf, newdata = testData)
+
+table(Факт = testData$cluster, Прогноз = pred_rf)
+acc_rf <- mean(pred_rf == testData$cluster)
+paste("Точность случайного леса:", round(100 * acc_rf, 2), "%")
+
+cat(paste("Точность Байеса:", round(100 * acc_nb, 2), "%\n"))
+cat(paste("Точность дерева решений:", round(100 * acc_tree, 2), "%\n"))
+cat(paste("Точность случайного леса:", round(100 * acc_rf, 2), "%\n"))
