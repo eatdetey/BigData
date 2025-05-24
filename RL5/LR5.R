@@ -1,10 +1,3 @@
-install.packages("gridExtra")
-install.packages("factoextra")
-install.packages("cluster")
-install.packages("parameters")
-install.packages("dendextend")
-install.packages("scatterplot3d") 
-
 library(tidyverse)
 library(ggplot2)
 library(psych)
